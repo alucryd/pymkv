@@ -98,7 +98,7 @@ class MKVTrack:
         that are already part of an MKV file.
     """
 
-    def __init__(self, file_path, track_id=0, track_name=None, language=None, default_track=False, forced_track=False):
+    def __init__(self, file_path, track_id=0, track_name=None, language=None, default_track=False, forced_track=False, source=None):
         # track info
         self._track_codec = None
         self._track_type = None
@@ -106,6 +106,8 @@ class MKVTrack:
 
         # base
         self.mkvmerge_path = 'mkvmerge'
+        self._source = None
+        self.source = source
         self._file_path = None
         self.file_path = file_path
         self._track_id = None
@@ -254,7 +256,9 @@ class MKVTrack:
         StateError
             Raised if `self.file_path` is not set. 
         """
-        if not self._file_path
-            raise StateError('file_path is not set')
-        parent = MKVFile()
-        return parent.extract_track(self.track_id, output_path, silent)
+        if self.source is None:
+            if self.file_path is None:
+                raise StateError('file_path is not set')
+            from pymkv import MKVFile
+            self.source = MKVFile(self.file_path)
+        return self.source.extract_track(self.track_id, output_path, silent)

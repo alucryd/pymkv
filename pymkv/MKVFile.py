@@ -503,7 +503,7 @@ class MKVFile:
         FileNotFoundError
             Raised if the path to mkvextract could not be verified.
         IndexError
-            Raised if `track_num` is is out of range of the track list.
+            Raised if `track_num` is out of range of the track list.
         """
         if not verify_mkvextract(mkvextract_path=self.mkvextract_path):
             raise FileNotFoundError('mkvextract is not at the specified path, add it there or change the mkvextract_path '

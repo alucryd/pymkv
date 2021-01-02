@@ -234,3 +234,27 @@ class MKVTrack:
     def audio_channels(self):
         """int: The number of audio channels in the track."""
         return self._audio_channels
+
+    def extract(self, output_path, silent=False):
+        """Extract a :class:`~pymkv.MKVTrack` from the :class:`~pymkv.MKVFile` object.
+
+        Parameters
+        ----------
+        output_path : str
+            The path to be used as the output file in the mkvextract command.
+        silent : bool, optional
+            By default the mkvextract output will be shown unless silent is True.
+
+        Raises
+        ------
+        FileNotFoundError
+            Raised if the path to mkvextract could not be verified.
+        IndexError
+            Raised if `self.track_num` is out of range of the track list.
+        StateError
+            Raised if `self.file_path` is not set. 
+        """
+        if not self._file_path
+            raise StateError('file_path is not set')
+        parent = MKVFile()
+        return parent.extract_track(self.track_id, output_path, silent)

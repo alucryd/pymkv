@@ -67,6 +67,8 @@ class MKVTrack:
         Determines if the track should be the default track of its type when muxed into an MKV file.
     forced_track : bool, optional
         Determines if the track should be a forced track when muxed into an MKV file.
+    source : MKVFile, optional
+        Actual MKVFile to perform extract operations against.
 
     Attributes
     ----------
@@ -129,6 +131,18 @@ class MKVTrack:
 
     def __repr__(self):
         return repr(self.__dict__)
+
+    @property
+    def source(self):
+        """MKVFile: The MKV file containing the desired track.
+
+        No error checking is performed, for performance reasons. It is recommended that this not be set by clients.
+        """
+        return self._source
+
+    @source.setter
+    def source(self, source):
+        self._source = source
 
     @property
     def file_path(self):

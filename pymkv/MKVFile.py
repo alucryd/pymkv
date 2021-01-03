@@ -103,7 +103,7 @@ class MKVFile:
 
             # add tracks with info
             for track in info_json['tracks']:
-                new_track = MKVTrack(file_path, track_id=track['id'], source=self)
+                new_track = MKVTrack(file_path, track_id=track['id'], source=self, track_properties=track['properties'])
                 if 'track_name' in track['properties']:
                     new_track.track_name = track['properties']['track_name']
                 if 'language' in track['properties']:

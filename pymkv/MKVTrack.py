@@ -100,11 +100,12 @@ class MKVTrack:
         that are already part of an MKV file.
     """
 
-    def __init__(self, file_path, track_id=0, track_name=None, language=None, default_track=False, forced_track=False, source=None):
+    def __init__(self, file_path, track_id=0, track_properties=None, track_name=None, language=None, default_track=False, forced_track=False, source=None):
         # track info
         self._track_codec = None
         self._track_type = None
-        self._audio_channels = 0
+        self._track_properties = {}
+        self.track_properties = track_properties
 
         # base
         self.mkvmerge_path = 'mkvmerge'
@@ -185,11 +186,11 @@ class MKVTrack:
         info_json = json.loads(sp.check_output([self.mkvmerge_path, '-J', self.file_path]).decode())
         if not 0 <= track_id < len(info_json['tracks']):
             raise IndexError('track index out of range')
+        track_info = info_json['tracks'][track_id]
         self._track_id = track_id
-        self._track_codec = info_json['tracks'][track_id]['codec']
-        self._track_type = info_json['tracks'][track_id]['type']
-        if self._track_type == 'audio':
-            self._audio_channels = info_json['tracks'][track_id]['properties']['audio_channels']
+        self._track_codec = track_info['codec']
+        self._track_type = track_info['type']
+        self._track_properties = track_info['properties']
 
     @property
     def language(self):
@@ -242,6 +243,17 @@ class MKVTrack:
         return self._track_codec
 
     @property
+    def track_properties(self):
+        """dict: The track properties attribute.
+        """
+        return self._track_properties
+
+    @track_properties.setter
+    def track_properties(self, track_properties):
+        if not track_properties is None:
+            self._track_properties = track_properties
+
+    @property
     def track_type(self):
         """str: The type of track such as video or audio."""
         return self._track_type
@@ -249,7 +261,7 @@ class MKVTrack:
     @property
     def audio_channels(self):
         """int: The number of audio channels in the track."""
-        return self._audio_channels
+        return self._track_properties['audio_channels']
 
     def extract(self, output_path, silent=False):
         """Extract a :class:`~pymkv.MKVTrack` from the :class:`~pymkv.MKVFile` object.
@@ -272,7 +284,7 @@ class MKVTrack:
         """
         if self.source is None:
             if self.file_path is None:
-                raise StateError('file_path is not set')
+                raise AttributeError('MKVTrack extract operation called without file_path or source set')
             from pymkv import MKVFile
             self.source = MKVFile(self.file_path)
         return self.source.extract_track(self.track_id, output_path, silent)

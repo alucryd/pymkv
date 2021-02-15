@@ -67,6 +67,8 @@ class MKVTrack:
         Determines if the track should be the default track of its type when muxed into an MKV file.
     forced_track : bool, optional
         Determines if the track should be a forced track when muxed into an MKV file.
+    source : MKVFile, optional
+        Actual MKVFile to perform extract operations against.
 
     Attributes
     ----------
@@ -98,14 +100,17 @@ class MKVTrack:
         that are already part of an MKV file.
     """
 
-    def __init__(self, file_path, track_id=0, track_name=None, language=None, default_track=False, forced_track=False):
+    def __init__(self, file_path, track_id=0, track_properties=None, track_name=None, language=None, default_track=False, forced_track=False, source=None):
         # track info
         self._track_codec = None
         self._track_type = None
-        self._audio_channels = 0
+        self._track_properties = {}
+        self.track_properties = track_properties
 
         # base
         self.mkvmerge_path = 'mkvmerge'
+        self._source = None
+        self.source = source
         self._file_path = None
         self.file_path = file_path
         self._track_id = None
@@ -127,6 +132,18 @@ class MKVTrack:
 
     def __repr__(self):
         return repr(self.__dict__)
+
+    @property
+    def source(self):
+        """MKVFile: The MKV file containing the desired track.
+
+        No error checking is performed, for performance reasons. It is recommended that this not be set by clients.
+        """
+        return self._source
+
+    @source.setter
+    def source(self, source):
+        self._source = source
 
     @property
     def file_path(self):
@@ -169,11 +186,11 @@ class MKVTrack:
         info_json = json.loads(sp.check_output([self.mkvmerge_path, '-J', self.file_path]).decode())
         if not 0 <= track_id < len(info_json['tracks']):
             raise IndexError('track index out of range')
+        track_info = info_json['tracks'][track_id]
         self._track_id = track_id
-        self._track_codec = info_json['tracks'][track_id]['codec']
-        self._track_type = info_json['tracks'][track_id]['type']
-        if self._track_type == 'audio':
-            self._audio_channels = info_json['tracks'][track_id]['properties']['audio_channels']
+        self._track_codec = track_info['codec']
+        self._track_type = track_info['type']
+        self._track_properties = track_info['properties']
 
     @property
     def language(self):
@@ -226,6 +243,17 @@ class MKVTrack:
         return self._track_codec
 
     @property
+    def track_properties(self):
+        """dict: The track properties attribute.
+        """
+        return self._track_properties
+
+    @track_properties.setter
+    def track_properties(self, track_properties):
+        if not track_properties is None:
+            self._track_properties = track_properties
+
+    @property
     def track_type(self):
         """str: The type of track such as video or audio."""
         return self._track_type
@@ -233,4 +261,30 @@ class MKVTrack:
     @property
     def audio_channels(self):
         """int: The number of audio channels in the track."""
-        return self._audio_channels
+        return self._track_properties['audio_channels']
+
+    def extract(self, output_path, silent=False):
+        """Extract a :class:`~pymkv.MKVTrack` from the :class:`~pymkv.MKVFile` object.
+
+        Parameters
+        ----------
+        output_path : str
+            The path to be used as the output file in the mkvextract command.
+        silent : bool, optional
+            By default the mkvextract output will be shown unless silent is True.
+
+        Raises
+        ------
+        FileNotFoundError
+            Raised if the path to mkvextract could not be verified.
+        IndexError
+            Raised if `self.track_num` is out of range of the track list.
+        StateError
+            Raised if `self.file_path` is not set. 
+        """
+        if self.source is None:
+            if self.file_path is None:
+                raise AttributeError('MKVTrack extract operation called without file_path or source set')
+            from pymkv import MKVFile
+            self.source = MKVFile(self.file_path)
+        return self.source.extract_track(self.track_id, output_path, silent)

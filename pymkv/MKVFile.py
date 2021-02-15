@@ -103,7 +103,7 @@ class MKVFile:
 
             # add tracks with info
             for track in info_json['tracks']:
-                new_track = MKVTrack(file_path, track_id=track['id'])
+                new_track = MKVTrack(file_path, track_id=track['id'], source=self, track_properties=track['properties'])
                 if 'track_name' in track['properties']:
                     new_track.track_name = track['properties']['track_name']
                 if 'language' in track['properties']:
@@ -311,7 +311,7 @@ class MKVFile:
             Raised if `track` is not a string-like path to a track file or an :class:`~pymkv.MKVTrack`.
         """
         if isinstance(track, str):
-            self.tracks.append(MKVTrack(track))
+            self.tracks.append(MKVTrack(track, source=self))
         elif isinstance(track, MKVTrack):
             self.tracks.append(track)
         else:
@@ -503,7 +503,7 @@ class MKVFile:
         FileNotFoundError
             Raised if the path to mkvextract could not be verified.
         IndexError
-            Raised if `track_num` is is out of range of the track list.
+            Raised if `track_num` is out of range of the track list.
         """
         if not verify_mkvextract(mkvextract_path=self.mkvextract_path):
             raise FileNotFoundError('mkvextract is not at the specified path, add it there or change the mkvextract_path '
